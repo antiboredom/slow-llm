@@ -5,8 +5,6 @@ function sleep(ms) {
 }
 
 function slowSSE(response, delay = 1500) {
-  console.log("slow sse");
-
   let buffer = "";
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
@@ -64,12 +62,10 @@ async function slowFetch() {
   const contentType = response.headers.get("Content-Type") || "";
 
   if (contentType.includes("text/event-stream")) {
-    return slowSSE(response, 100);
+    return slowSSE(response, 1500);
   }
 
-  return response;
-
-  // return slowResponse(response, 100);
+  return slowResponse(response, 100);
 }
 
 window.fetch = slowFetch;
