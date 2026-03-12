@@ -5,17 +5,19 @@ function sleep(ms) {
 }
 
 function slowSSE(response, delay = 1500) {
+  console.log("slow sse");
+
   let buffer = "";
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
 
-  const slowStream = new TransformStream({
+  const stream = new TransformStream({
     async transform(chunk, controller) {
       buffer += decoder.decode(chunk, { stream: true });
-      const events = buffer.split("\n\n"); // sse streams are split into events by \n\n
+      const events = buffer.split(/\r?\n\r?\n/); // sse streams should be split into events by \n\n (but sometimes \r\n??)
+
       buffer = events.pop();
 
-      // iterate through the events, and sleep
       for (const event of events) {
         if (event.trim()) {
           controller.enqueue(encoder.encode(event + "\n\n"));
@@ -23,13 +25,13 @@ function slowSSE(response, delay = 1500) {
         }
       }
     },
-    flush(controller) {
+    async flush(controller) {
       // if there's anything left to do, enqueue it
       if (buffer.trim() !== "") controller.enqueue(encoder.encode(buffer));
     },
   });
 
-  return new Response(response.body.pipeThrough(slowStream), {
+  return new Response(response.body.pipeThrough(stream), {
     status: response.status,
     statusText: response.statusText,
     headers: response.headers,
@@ -37,7 +39,7 @@ function slowSSE(response, delay = 1500) {
 }
 
 function slowResponse(response, chunkSize = 200, sleepTime = 16) {
-  const slowResponse = new TransformStream({
+  const stream = new TransformStream({
     async transform(chunk, controller) {
       let offset = 0;
       while (offset < chunk.length) {
@@ -48,7 +50,7 @@ function slowResponse(response, chunkSize = 200, sleepTime = 16) {
     },
   });
 
-  return new Response(response.body.pipeThrough(slowResponse), {
+  return new Response(response.body.pipeThrough(stream), {
     status: response.status,
     statusText: response.statusText,
     headers: response.headers,
@@ -60,11 +62,14 @@ async function slowFetch() {
   if (!response.body) return response;
 
   const contentType = response.headers.get("Content-Type") || "";
+
   if (contentType.includes("text/event-stream")) {
-    return slowSSE(response, 1500);
+    return slowSSE(response, 100);
   }
 
-  return slowResponse(response, 100);
+  return response;
+
+  // return slowResponse(response, 100);
 }
 
 window.fetch = slowFetch;
