@@ -11,5 +11,8 @@
     }
   ],
   "permissions": ["scripting"],
-  "host_permissions": ["<all_urls>"]
+  "host_permissions": ["<all_urls>"],
+  "icons": {
+    "500": "logo.png"
+  }
 }
