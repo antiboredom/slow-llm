@@ -11,8 +11,15 @@
       "world": "MAIN"
     }
   ],
-  "permissions": ["scripting"],
   "icons": {
     "500": "logo.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "@slow-llm",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
   }
 }
